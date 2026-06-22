@@ -41,6 +41,11 @@ Small local demo for a manufacturing knowledge assistant using:
 - For a manager demo, this is enough to show the full RAG flow end to end.
 - If Ollama is unavailable, the app still returns the best matching chunks so you can demonstrate retrieval.
 
+## Reference Material
+
+- The file `data/Manufacturing_Local_Llama_RAG_Jun2026.html` is kept in the repo as a reference document for the broader standalone manufacturing RAG concept and cost model.
+- It is reference material only. The running demo indexes documents from `data/docs/` and writes its search index into `data/index/`.
+
 ## Windows runnable package
 
 If you want to deploy this to a Windows machine as a small software package, use the included launcher and build scripts.
