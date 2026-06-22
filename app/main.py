@@ -18,7 +18,7 @@ seed_sample_docs()
 class ChatRequest(BaseModel):
     question: str = Field(min_length=3)
     top_k: int = Field(default=5, ge=1, le=10)
-    model: str = Field(default="llama3.1:8b")
+    model: str = Field(default="llama3:latest")
 
 
 @app.get("/")

@@ -25,7 +25,7 @@ SAMPLE_DOCS_DIR = BUNDLE_DIR / "sample_docs"
 DOCS_DIR = APP_HOME / "data" / "docs"
 INDEX_DIR = APP_HOME / "data" / "index"
 INDEX_FILE = INDEX_DIR / "tfidf_index.pkl"
-DEFAULT_MODEL = "llama3.1:8b"
+DEFAULT_MODEL = "llama3:latest"
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
 QUERY_ALIASES = {
     "lanten": "lantern",
@@ -207,7 +207,9 @@ def build_prompt(question: str, results: list[dict[str, Any]]) -> str:
         "You are a manufacturing knowledge assistant. "
         "Answer only from the supplied sources. "
         "If the sources are weak or missing, say that clearly. "
-        "Always provide a concise answer followed by cited sources.\n\n"
+        "Always provide a concise answer followed by cited sources. "
+        "If the user asks for the latest document, compare document dates and explicitly choose the newest one from the supplied sources. "
+        "If the user asks for findings or a summary, respond with short bullet-style points in plain text.\n\n"
         f"Question: {question}\n\n"
         f"Sources:\n{context}"
     )
@@ -239,7 +241,7 @@ def ask_ollama(prompt: str, model: str = DEFAULT_MODEL) -> str | None:
 
 
 def answer_question(question: str, top_k: int = 5, model: str = DEFAULT_MODEL) -> dict[str, Any]:
-    results = retrieve(question=question, top_k=top_k)
+    results = retrieve(query=question, top_k=top_k)
     if not results:
         return {
             "answer": "No relevant content was found in the indexed documents.",

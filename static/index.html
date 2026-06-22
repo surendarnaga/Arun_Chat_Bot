@@ -60,6 +60,10 @@
     }
     .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
     .toolbar button { background: var(--accent); color: #fff; }
+    .toolbar button:disabled, .chat-form button:disabled, .examples button:disabled {
+      cursor: wait;
+      opacity: 0.6;
+    }
     .toolbar small { color: var(--muted); }
     .chat-box {
       min-height: 420px;
@@ -83,6 +87,10 @@
     .msg.assistant {
       background: #fffdf8;
       border-color: #f3e6c4;
+    }
+    .msg.system {
+      background: #f8fafc;
+      border-color: #d8dee9;
     }
     .msg h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--muted); }
     .citations {
@@ -122,6 +130,9 @@
       font-size: 12px;
       margin-top: 10px;
     }
+    .status.ok { color: #166534; }
+    .status.busy { color: #0b5fff; }
+    .status.error { color: #b42318; }
     code {
       background: #eef2ff;
       padding: 2px 6px;
@@ -170,6 +181,23 @@
     const chatForm = document.getElementById('chatForm');
     const reindexBtn = document.getElementById('reindexBtn');
     const statusEl = document.getElementById('status');
+    const exampleButtons = Array.from(document.querySelectorAll('[data-q]'));
+    const submitButton = chatForm.querySelector('button[type="submit"]');
+
+    function setStatus(message, kind = '') {
+      statusEl.textContent = message;
+      statusEl.className = `status ${kind}`.trim();
+    }
+
+    function setBusy(isBusy) {
+      questionInput.disabled = isBusy;
+      submitButton.disabled = isBusy;
+      reindexBtn.disabled = isBusy;
+      exampleButtons.forEach((button) => {
+        button.disabled = isBusy;
+      });
+      submitButton.textContent = isBusy ? 'Thinking...' : 'Ask';
+    }
 
     function addMessage(kind, title, body, citations = []) {
       const container = document.createElement('div');
@@ -178,6 +206,7 @@
       header.textContent = title;
       const content = document.createElement('div');
       content.textContent = body;
+      content.style.whiteSpace = 'pre-wrap';
       container.appendChild(header);
       container.appendChild(content);
 
@@ -202,21 +231,41 @@
 
     async function askQuestion(question) {
       addMessage('user', 'You', question);
-      statusEl.textContent = 'Running retrieval and local generation...';
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, top_k: 5, model: 'llama3.1:8b' })
-      });
-      if (!response.ok) {
-        const err = await response.json();
-        addMessage('assistant', 'Assistant', err.detail || 'Request failed');
-        statusEl.textContent = 'Request failed.';
-        return;
+      setBusy(true);
+      setStatus('Running retrieval and local generation...', 'busy');
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, top_k: 5, model: 'llama3:latest' })
+        });
+        if (!response.ok) {
+          let message = 'Request failed.';
+          try {
+            const err = await response.json();
+            message = err.detail || message;
+          } catch (error) {
+            message = `Request failed with status ${response.status}.`;
+          }
+          addMessage('system', 'Error', message);
+          setStatus(message, 'error');
+          return;
+        }
+        const payload = await response.json();
+        addMessage('assistant', payload.mode === 'rag' ? 'Assistant' : 'Assistant (retrieval mode)', payload.answer, payload.citations || []);
+        setStatus(
+          payload.mode === 'rag'
+            ? 'Answered using local Llama and retrieved sources.'
+            : 'Ollama unavailable; showing retrieval-only results.',
+          payload.mode === 'rag' ? 'ok' : ''
+        );
+      } catch (error) {
+        const message = 'The chat request did not complete. Check whether the local server and Ollama are still running.';
+        addMessage('system', 'Error', message);
+        setStatus(message, 'error');
+      } finally {
+        setBusy(false);
       }
-      const payload = await response.json();
-      addMessage('assistant', payload.mode === 'rag' ? 'Assistant' : 'Assistant (retrieval mode)', payload.answer, payload.citations || []);
-      statusEl.textContent = payload.mode === 'rag' ? 'Answered using local Llama and retrieved sources.' : 'Ollama unavailable; showing retrieval-only results.';
     }
 
     chatForm.addEventListener('submit', async (event) => {
@@ -234,11 +283,20 @@
     });
 
     reindexBtn.addEventListener('click', async () => {
-      statusEl.textContent = 'Rebuilding local index...';
-      const response = await fetch('/api/reindex', { method: 'POST' });
-      const payload = await response.json();
-      statusEl.textContent = `Indexed ${payload.chunks} chunks.`;
+      setBusy(true);
+      setStatus('Rebuilding local index...', 'busy');
+      try {
+        const response = await fetch('/api/reindex', { method: 'POST' });
+        const payload = await response.json();
+        setStatus(`Indexed ${payload.chunks} chunks.`, 'ok');
+      } catch (error) {
+        setStatus('Reindex failed. Check the local server logs.', 'error');
+      } finally {
+        setBusy(false);
+      }
     });
+
+    addMessage('system', 'Ready', 'The demo is live. Pick an example question or ask your own manufacturing search query.');
   </script>
 </body>
 </html>
