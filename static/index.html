@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manufacturing RAG Demo</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #d8dee9;
+      --brand: #0b5fff;
+      --accent: #0f766e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: linear-gradient(180deg, #eaf1ff 0%, var(--bg) 32%);
+      color: var(--ink);
+    }
+    .shell {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+    }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    p { color: var(--muted); line-height: 1.6; }
+    .examples button, .toolbar button, .chat-form button {
+      border: 0;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .examples button {
+      background: #eef4ff;
+      color: var(--brand);
+    }
+    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+    .toolbar button { background: var(--accent); color: #fff; }
+    .toolbar small { color: var(--muted); }
+    .chat-box {
+      min-height: 420px;
+      max-height: 520px;
+      overflow-y: auto;
+      padding: 8px 0;
+      margin-bottom: 14px;
+    }
+    .msg {
+      padding: 14px 16px;
+      border-radius: 14px;
+      margin: 10px 0;
+      line-height: 1.6;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+    .msg.user {
+      background: #edf4ff;
+      border-color: #cfe0ff;
+    }
+    .msg.assistant {
+      background: #fffdf8;
+      border-color: #f3e6c4;
+    }
+    .msg h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--muted); }
+    .citations {
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--line);
+    }
+    .citation {
+      padding: 10px 12px;
+      margin-top: 8px;
+      background: #f8fafc;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+    }
+    .citation strong { display: block; margin-bottom: 4px; }
+    .chat-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      min-height: 84px;
+      resize: vertical;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      padding: 14px;
+      font: inherit;
+    }
+    .chat-form button {
+      background: var(--brand);
+      color: #fff;
+      min-width: 120px;
+    }
+    .status {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 10px;
+    }
+    code {
+      background: #eef2ff;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; }
+      .chat-form { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero">
+      <section class="panel">
+        <h1>Manufacturing RAG Demo</h1>
+        <p>Ask simple questions over a small document set. The app retrieves matching passages from local documents and uses your local Llama model in Ollama to generate a grounded answer.</p>
+        <div class="examples">
+          <button type="button" data-q="Find the report related to lantern clip issues">Lantern clip issues</button>
+          <button type="button" data-q="Summarize the validation findings for split leather">Split leather findings</button>
+          <button type="button" data-q="Where is the latest know-how document from Martin">Latest document from Martin</button>
+        </div>
+      </section>
+      <aside class="panel">
+        <div class="toolbar">
+          <button id="reindexBtn" type="button">Rebuild Index</button>
+          <small>Reads files from <code>data/docs</code></small>
+        </div>
+        <p><strong>Demo flow</strong><br />1. Drop a few PDFs or DOCX files into the docs folder.<br />2. Rebuild the index.<br />3. Ask a question.<br />4. Show the manager the answer plus citations.</p>
+      </aside>
+    </div>
+
+    <section class="panel">
+      <div id="chatBox" class="chat-box"></div>
+      <form id="chatForm" class="chat-form">
+        <textarea id="question" placeholder="Ask a question about your manufacturing documents"></textarea>
+        <button type="submit">Ask</button>
+      </form>
+      <div id="status" class="status">Ready.</div>
+    </section>
+  </div>
+
+  <script>
+    const chatBox = document.getElementById('chatBox');
+    const questionInput = document.getElementById('question');
+    const chatForm = document.getElementById('chatForm');
+    const reindexBtn = document.getElementById('reindexBtn');
+    const statusEl = document.getElementById('status');
+
+    function addMessage(kind, title, body, citations = []) {
+      const container = document.createElement('div');
+      container.className = `msg ${kind}`;
+      const header = document.createElement('h4');
+      header.textContent = title;
+      const content = document.createElement('div');
+      content.textContent = body;
+      container.appendChild(header);
+      container.appendChild(content);
+
+      if (citations.length) {
+        const section = document.createElement('div');
+        section.className = 'citations';
+        const sectionTitle = document.createElement('strong');
+        sectionTitle.textContent = 'Citations';
+        section.appendChild(sectionTitle);
+        citations.forEach((citation) => {
+          const item = document.createElement('div');
+          item.className = 'citation';
+          item.innerHTML = `<strong>${citation.title}</strong><div>${citation.source}</div><div>Score: ${citation.score}</div><div>${citation.text.slice(0, 280)}...</div>`;
+          section.appendChild(item);
+        });
+        container.appendChild(section);
+      }
+
+      chatBox.appendChild(container);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function askQuestion(question) {
+      addMessage('user', 'You', question);
+      statusEl.textContent = 'Running retrieval and local generation...';
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, top_k: 5, model: 'llama3.1:8b' })
+      });
+      if (!response.ok) {
+        const err = await response.json();
+        addMessage('assistant', 'Assistant', err.detail || 'Request failed');
+        statusEl.textContent = 'Request failed.';
+        return;
+      }
+      const payload = await response.json();
+      addMessage('assistant', payload.mode === 'rag' ? 'Assistant' : 'Assistant (retrieval mode)', payload.answer, payload.citations || []);
+      statusEl.textContent = payload.mode === 'rag' ? 'Answered using local Llama and retrieved sources.' : 'Ollama unavailable; showing retrieval-only results.';
+    }
+
+    chatForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const question = questionInput.value.trim();
+      if (!question) return;
+      questionInput.value = '';
+      await askQuestion(question);
+    });
+
+    document.querySelectorAll('[data-q]').forEach((button) => {
+      button.addEventListener('click', async () => {
+        await askQuestion(button.getAttribute('data-q'));
+      });
+    });
+
+    reindexBtn.addEventListener('click', async () => {
+      statusEl.textContent = 'Rebuilding local index...';
+      const response = await fetch('/api/reindex', { method: 'POST' });
+      const payload = await response.json();
+      statusEl.textContent = `Indexed ${payload.chunks} chunks.`;
+    });
+  </script>
+</body>
+</html>
