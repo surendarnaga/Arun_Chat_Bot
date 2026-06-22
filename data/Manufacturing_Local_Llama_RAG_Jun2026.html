@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Manufacturing Local Llama RAG Architecture and Cost Estimate</title>
+<style>
+  :root {
+    --ink: #1f2937;
+    --muted: #6b7280;
+    --bg: #f5f7fb;
+    --card: #ffffff;
+    --line: #d7dee8;
+    --blue: #0b5fff;
+    --teal: #0f766e;
+    --orange: #c2410c;
+    --green: #166534;
+    --red: #991b1b;
+    --sand: #fff7ed;
+    --mint: #ecfdf5;
+    --sky: #eff6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--ink); font-size: 13px; }
+  header {
+    padding: 28px 36px;
+    color: #fff;
+    background: linear-gradient(135deg, #0b5fff, #0f3b9f);
+    border-bottom: 4px solid #f97316;
+  }
+  header h1 { font-size: 24px; margin-bottom: 6px; }
+  header p { opacity: .9; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 24px 28px 40px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-bottom: 24px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.05);
+  }
+  .card label { display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px; }
+  .card .value { font-size: 24px; font-weight: 700; }
+  .card .sub { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .card.blue { border-top: 3px solid var(--blue); }
+  .card.orange { border-top: 3px solid #f97316; }
+  .card.green { border-top: 3px solid var(--green); }
+  .card.teal { border-top: 3px solid var(--teal); }
+  h2 {
+    margin: 26px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--blue);
+    color: var(--blue);
+    font-size: 16px;
+  }
+  h3 { margin: 16px 0 8px; font-size: 13px; color: #374151; }
+  .note {
+    background: var(--sand);
+    border-left: 4px solid #f59e0b;
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .ok {
+    background: var(--mint);
+    border-left: 4px solid #22c55e;
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.05);
+  }
+  .panel ul { padding-left: 18px; line-height: 1.7; }
+  .panel li { margin: 2px 0; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--card);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(0,0,0,.05);
+    margin-bottom: 18px;
+  }
+  thead tr { background: var(--blue); color: #fff; }
+  thead th { padding: 10px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .4px; }
+  tbody tr { border-bottom: 1px solid var(--line); }
+  tbody tr:last-child { border-bottom: none; }
+  td { padding: 9px 12px; vertical-align: top; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .subtotal td { background: var(--sky); font-weight: 700; }
+  .total td { background: #e7f8ee; color: var(--green); font-weight: 700; font-size: 14px; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .step .n {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--blue);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .step h4 { margin-bottom: 6px; font-size: 13px; }
+  .step p { color: var(--muted); line-height: 1.55; font-size: 12px; }
+  .pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .pill.local { background: #dbeafe; color: #1d4ed8; }
+  .pill.must { background: #dcfce7; color: #166534; }
+  .code {
+    background: #111827;
+    color: #e5e7eb;
+    border-radius: 10px;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: pre-wrap;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+  footer { text-align: center; color: var(--muted); font-size: 11px; padding-top: 12px; }
+  @media (max-width: 960px) {
+    .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Manufacturing RAG Assistant on Local Llama</h1>
+  <p>Standalone enterprise search and question answering for historical manufacturing documents, transcripts and video evidence</p>
+</header>
+<div class="wrap">
+  <div class="ok">
+    <strong>Scope:</strong> This is a separate solution, independent from TI, TINEXT, or the earlier multi-environment platform BOM. It has its own ingestion, indexing, model serving, security and operating cost profile.
+  </div>
+
+  <div class="cards">
+    <div class="card blue">
+      <label>Recommended Pattern</label>
+      <div class="value">Search-First RAG</div>
+      <div class="sub">Start with document search, cited summaries and latest-version lookup before adding broader chatbot behavior.</div>
+    </div>
+    <div class="card teal">
+      <label>Raw Data Volume</label>
+      <div class="value">1,000 GB</div>
+      <div class="sub">Documents, issue reports, video recordings and know-how content. Searchable extracted text will be much smaller than raw storage.</div>
+    </div>
+    <div class="card orange">
+      <label>POC Monthly</label>
+      <div class="value">$700 - $1,800</div>
+      <div class="sub">Local Llama 8B, vector DB, ingestion workers and transcript processing.</div>
+    </div>
+    <div class="card green">
+      <label>Production Monthly</label>
+      <div class="value">$2,500 - $6,500</div>
+      <div class="sub">Standalone internal service with search API, access controls, monitoring and backups.</div>
+    </div>
+  </div>
+
+  <div class="note">
+    <strong>Integration point:</strong> company Copilot can remain in place, but this knowledge assistant should be built as its own internal RAG service. The clean pattern is: users ask questions in a simple web UI, Teams bot or internal tool, and that tool calls your local Llama-based RAG API.
+  </div>
+
+  <h2>Recommended Architecture</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="n">1</div>
+      <h4>Collect and classify</h4>
+      <p>Separate reports, quality documents, validation findings, issue logs, recordings and know-how documents. Tag author, product, defect type, date, plant and confidentiality.</p>
+    </div>
+    <div class="step">
+      <div class="n">2</div>
+      <h4>Extract searchable text</h4>
+      <p>Use OCR for scans and Whisper for audio or video. Keep timestamps in transcripts so users can jump back to exact evidence.</p>
+    </div>
+    <div class="step">
+      <div class="n">3</div>
+      <h4>Chunk and enrich</h4>
+      <p>Split text into retrieval-sized chunks and store metadata such as source path, version, author and issue category.</p>
+    </div>
+    <div class="step">
+      <div class="n">4</div>
+      <h4>Index for hybrid search</h4>
+      <p>Use vector embeddings plus BM25 keyword search so exact part names, issue labels and people names still rank correctly.</p>
+    </div>
+    <div class="step">
+      <div class="n">5</div>
+      <h4>Answer with local Llama</h4>
+      <p>Retrieve top evidence, rerank, then ask the model to answer only from those chunks and return source citations.</p>
+    </div>
+    <div class="step">
+      <div class="n">6</div>
+      <h4>Expose a simple internal API</h4>
+      <p>Keep the serving layer simple: search, summarize and latest-document lookup. That is enough for the example questions you gave.</p>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3>Suggested stack</h3>
+      <ul>
+        <li><span class="pill local">Local</span> Ollama or vLLM for Llama serving</li>
+        <li><span class="pill local">Local</span> Llama 3.1 8B Instruct for POC</li>
+        <li><span class="pill local">Local</span> BGE-M3 or Nomic Embed Text for embeddings</li>
+        <li><span class="pill local">Local</span> Qdrant or PostgreSQL plus pgvector</li>
+        <li><span class="pill must">Must</span> Hybrid search with BM25 for exact keywords</li>
+        <li><span class="pill must">Must</span> Whisper large-v3 for recordings</li>
+        <li><span class="pill must">Must</span> OCR for scanned reports</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h3>What the first release should do</h3>
+      <ul>
+        <li>Find reports related to a specific issue like lantern clip problems</li>
+        <li>Summarize cited findings for a topic like split leather validation</li>
+        <li>Locate the latest know-how document by a named author like Martin</li>
+        <li>Return file path, date, author and confidence with every answer</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Example Query Behavior</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Question</th>
+        <th>Retrieval behavior</th>
+        <th>Answer shape</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Find the report related to lantern clip issues</td>
+        <td>Hybrid search with exact term boost, metadata filters and reranking</td>
+        <td>Top matched documents with short reasons and dates</td>
+      </tr>
+      <tr>
+        <td>Summarize the validation findings for split leather</td>
+        <td>Retrieve validation documents, findings and transcripts for that topic</td>
+        <td>Short bullet summary with citations</td>
+      </tr>
+      <tr>
+        <td>Where is the latest know-how document from Martin</td>
+        <td>Filter by author and type, then sort by date/version</td>
+        <td>Single latest document path plus metadata</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Searchable Footprint and Cost</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Estimate</th>
+        <th>Comment</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Raw source storage</td>
+        <td>1,000 GB</td>
+        <td>Original files remain in source storage or archive.</td>
+      </tr>
+      <tr>
+        <td>Extracted transcripts and text</td>
+        <td>30 - 120 GB</td>
+        <td>After OCR and transcription.</td>
+      </tr>
+      <tr>
+        <td>Chunk store and metadata</td>
+        <td>40 - 150 GB</td>
+        <td>Depends on chunk size and overlap.</td>
+      </tr>
+      <tr>
+        <td>Embeddings and index overhead</td>
+        <td>40 - 140 GB</td>
+        <td>Vector store plus keyword index and caches.</td>
+      </tr>
+      <tr class="subtotal">
+        <td>Working searchable footprint</td>
+        <td><strong>110 - 410 GB</strong></td>
+        <td><strong>This is the active RAG serving layer, separate from raw source storage.</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th class="num">POC / month</th>
+        <th class="num">Production / month</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>LLM inference host</td>
+        <td class="num">$300 - $800</td>
+        <td class="num">$1,200 - $2,800</td>
+        <td>Local Llama serving, sized by concurrency and model size.</td>
+      </tr>
+      <tr>
+        <td>Ingestion and embedding worker</td>
+        <td class="num">$120 - $250</td>
+        <td class="num">$250 - $500</td>
+        <td>Batch OCR, chunking and embedding generation.</td>
+      </tr>
+      <tr>
+        <td>Vector DB and keyword index</td>
+        <td class="num">$100 - $250</td>
+        <td class="num">$300 - $900</td>
+        <td>SSD and RAM driven.</td>
+      </tr>
+      <tr>
+        <td>Storage and backup</td>
+        <td class="num">$50 - $150</td>
+        <td class="num">$150 - $400</td>
+        <td>Raw plus processed storage.</td>
+      </tr>
+      <tr>
+        <td>Transcription processing</td>
+        <td class="num">$80 - $250</td>
+        <td class="num">$200 - $700</td>
+        <td>Initial backlog may spike above steady-state run cost.</td>
+      </tr>
+      <tr>
+        <td>API, UI, auth and monitoring</td>
+        <td class="num">$80 - $180</td>
+        <td class="num">$400 - $1,200</td>
+        <td>Simple internal service layer.</td>
+      </tr>
+      <tr class="total">
+        <td><strong>Total</strong></td>
+        <td class="num"><strong>$730 - $1,880</strong></td>
+        <td class="num"><strong>$2,500 - $6,500</strong></td>
+        <td><strong>Standalone from TI/TINEXT.</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Minimal Prompt Contract</h2>
+  <div class="code">System:
+Answer only from retrieved company documents and transcripts.
+If evidence is weak or missing, say so.
+Always return:
+1. short answer
+2. cited sources with file name and date
+3. video timestamp when applicable
+4. confidence: high, medium, low
+
+User:
+Find the report related to lantern clip issues</div>
+
+  <footer>Standalone manufacturing local Llama RAG estimate | June 2026</footer>
+</div>
+</body>
+</html>

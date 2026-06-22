@@ -27,6 +27,7 @@ INDEX_DIR = APP_HOME / "data" / "index"
 INDEX_FILE = INDEX_DIR / "tfidf_index.pkl"
 DEFAULT_MODEL = "llama3:latest"
 OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
+ALLOWED_EXTENSIONS = {".txt", ".md", ".pdf", ".docx"}
 QUERY_ALIASES = {
     "lanten": "lantern",
     "s[lit": "split",
@@ -44,6 +45,10 @@ class Chunk:
 
 class IndexNotBuiltError(RuntimeError):
     pass
+
+
+def is_supported_document(path: Path) -> bool:
+    return path.suffix.lower() in ALLOWED_EXTENSIONS
 
 
 def ensure_runtime_dirs() -> None:
@@ -131,12 +136,29 @@ def discover_chunks() -> list[Chunk]:
     ensure_runtime_dirs()
     chunks: list[Chunk] = []
     for path in sorted(DOCS_DIR.rglob("*")):
-        if not path.is_file() or path.name.startswith("."):
+        if not path.is_file() or path.name.startswith(".") or not is_supported_document(path):
             continue
         text = load_text_from_path(path)
         rel = relative_source_path(path)
         chunks.extend(chunk_text(text=text, source=rel, title=path.name))
     return chunks
+
+
+def list_documents() -> list[dict[str, Any]]:
+    ensure_runtime_dirs()
+    documents: list[dict[str, Any]] = []
+    for path in sorted(DOCS_DIR.iterdir()):
+        if not path.is_file() or path.name.startswith(".") or not is_supported_document(path):
+            continue
+        stat = path.stat()
+        documents.append(
+            {
+                "name": path.name,
+                "size_bytes": stat.st_size,
+                "updated_at": stat.st_mtime,
+            }
+        )
+    return documents
 
 
 def build_index() -> dict[str, Any]:

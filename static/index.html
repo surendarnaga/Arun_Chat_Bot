@@ -6,103 +6,258 @@
   <title>Manufacturing RAG Demo</title>
   <style>
     :root {
-      --bg: #f5f7fb;
-      --card: #ffffff;
-      --ink: #1f2937;
-      --muted: #6b7280;
-      --line: #d8dee9;
-      --brand: #0b5fff;
-      --accent: #0f766e;
+      --bg: #eef3f8;
+      --paper: #ffffff;
+      --panel: rgba(255, 255, 255, 0.92);
+      --ink: #192534;
+      --muted: #66758a;
+      --line: #d9e2ec;
+      --brand: #1459ff;
+      --brand-deep: #0a3699;
+      --accent: #11806a;
+      --warning: #b54708;
+      --danger: #c4320a;
+      --shadow: 0 18px 50px rgba(25, 37, 52, 0.08);
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: "Segoe UI", Arial, sans-serif;
-      background: linear-gradient(180deg, #eaf1ff 0%, var(--bg) 32%);
       color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(20, 89, 255, 0.10), transparent 28%),
+        radial-gradient(circle at top right, rgba(17, 128, 106, 0.10), transparent 24%),
+        linear-gradient(180deg, #f7fbff 0%, var(--bg) 34%, #edf2f7 100%);
     }
     .shell {
-      max-width: 1100px;
+      max-width: 1280px;
       margin: 0 auto;
-      padding: 28px 20px 40px;
+      padding: 28px 20px 42px;
     }
     .hero {
-      display: grid;
-      grid-template-columns: 1.1fr .9fr;
-      gap: 18px;
+      background: linear-gradient(135deg, rgba(20, 89, 255, 0.97), rgba(10, 54, 153, 0.96));
+      color: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: var(--shadow);
       margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -60px;
+      top: -60px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      position: relative;
+      z-index: 1;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      margin-bottom: 10px;
+    }
+    h1 { margin: 0 0 10px; font-size: 32px; line-height: 1.1; }
+    .hero p { margin: 0; color: rgba(255,255,255,0.88); line-height: 1.65; }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .stat {
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+    .stat strong {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    .stat span { font-size: 12px; color: rgba(255,255,255,0.82); }
+    .hero-side {
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 20px;
+      padding: 18px;
+      backdrop-filter: blur(8px);
+    }
+    .hero-side h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+    .hero-side ul {
+      margin: 0;
+      padding-left: 18px;
+      color: rgba(255,255,255,0.88);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 18px;
     }
     .panel {
-      background: var(--card);
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: 22px;
       padding: 20px;
-      box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
     }
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    p { color: var(--muted); line-height: 1.6; }
-    .examples button, .toolbar button, .chat-form button {
-      border: 0;
+    .sidebar-section + .sidebar-section { margin-top: 16px; }
+    .sidebar-title, .main-title {
+      margin: 0 0 12px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .badge {
+      padding: 6px 10px;
       border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 600;
-      cursor: pointer;
+      background: #edf4ff;
+      color: var(--brand);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.2px;
     }
-    .examples {
+    .upload-zone {
+      border: 2px dashed #bed1f9;
+      border-radius: 18px;
+      padding: 18px;
+      background: linear-gradient(180deg, #f8fbff, #f2f7ff);
+      text-align: center;
+      transition: 0.18s ease;
+    }
+    .upload-zone.dragover {
+      border-color: var(--brand);
+      background: linear-gradient(180deg, #eef4ff, #e6f0ff);
+      transform: translateY(-1px);
+    }
+    .upload-zone p {
+      margin: 8px 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+    .upload-zone input { display: none; }
+    .button-row, .examples {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-top: 14px;
     }
-    .examples button {
-      background: #eef4ff;
-      color: var(--brand);
+    button, .upload-label {
+      border: 0;
+      border-radius: 999px;
+      padding: 11px 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font: inherit;
+      transition: 0.18s ease;
     }
-    .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
-    .toolbar button { background: var(--accent); color: #fff; }
-    .toolbar button:disabled, .chat-form button:disabled, .examples button:disabled {
-      cursor: wait;
+    button:hover, .upload-label:hover { transform: translateY(-1px); }
+    button:disabled, .upload-label.disabled {
       opacity: 0.6;
+      cursor: wait;
+      transform: none;
     }
-    .toolbar small { color: var(--muted); }
-    .chat-box {
-      min-height: 420px;
-      max-height: 520px;
-      overflow-y: auto;
-      padding: 8px 0;
+    .primary { background: var(--brand); color: #fff; }
+    .secondary { background: #edf4ff; color: var(--brand); }
+    .ghost { background: #f7f9fc; color: var(--ink); border: 1px solid var(--line); }
+    .accent { background: var(--accent); color: #fff; }
+    .upload-label { display: inline-flex; align-items: center; justify-content: center; background: var(--brand-deep); color: #fff; }
+    .doc-list {
+      display: grid;
+      gap: 10px;
+      max-height: 280px;
+      overflow: auto;
+    }
+    .doc-item {
+      padding: 12px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid #e6ecf3;
+    }
+    .doc-item strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+    .doc-meta {
+      color: var(--muted);
+      font-size: 11px;
+    }
+    .examples {
+      margin-top: 8px;
+    }
+    .examples button { background: #eef4ff; color: var(--brand); }
+    .chat-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
       margin-bottom: 14px;
+    }
+    .chat-box {
+      min-height: 460px;
+      max-height: 620px;
+      overflow-y: auto;
+      padding-right: 4px;
     }
     .msg {
       padding: 14px 16px;
-      border-radius: 14px;
-      margin: 10px 0;
-      line-height: 1.6;
+      border-radius: 18px;
+      margin: 12px 0;
+      line-height: 1.65;
       border: 1px solid var(--line);
       background: #fff;
     }
-    .msg.user {
-      background: #edf4ff;
-      border-color: #cfe0ff;
+    .msg.user { background: #edf4ff; border-color: #cfe0ff; }
+    .msg.assistant { background: #fffdf8; border-color: #f0e3bf; }
+    .msg.system { background: #f8fafc; border-color: #dbe3ec; }
+    .msg h4 {
+      margin: 0 0 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--muted);
     }
-    .msg.assistant {
-      background: #fffdf8;
-      border-color: #f3e6c4;
-    }
-    .msg.system {
-      background: #f8fafc;
-      border-color: #d8dee9;
-    }
-    .msg h4 { margin: 0 0 8px; font-size: 12px; text-transform: uppercase; color: var(--muted); }
+    .msg-body { white-space: pre-wrap; }
     .citations {
       margin-top: 12px;
       padding-top: 10px;
       border-top: 1px dashed var(--line);
+      display: grid;
+      gap: 8px;
     }
     .citation {
       padding: 10px 12px;
-      margin-top: 8px;
       background: #f8fafc;
-      border-radius: 10px;
+      border-radius: 14px;
       border: 1px solid #e5e7eb;
     }
     .citation strong { display: block; margin-bottom: 4px; }
@@ -110,79 +265,148 @@
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 10px;
+      margin-top: 14px;
     }
     textarea {
       width: 100%;
-      min-height: 84px;
+      min-height: 92px;
       resize: vertical;
-      border-radius: 14px;
+      border-radius: 18px;
       border: 1px solid var(--line);
-      padding: 14px;
+      padding: 14px 16px;
       font: inherit;
-    }
-    .chat-form button {
-      background: var(--brand);
-      color: #fff;
-      min-width: 120px;
+      background: #fff;
     }
     .status {
-      color: var(--muted);
+      margin-top: 12px;
       font-size: 12px;
-      margin-top: 10px;
+      color: var(--muted);
+      min-height: 18px;
     }
     .status.ok { color: #166534; }
-    .status.busy { color: #0b5fff; }
-    .status.error { color: #b42318; }
+    .status.busy { color: var(--brand); }
+    .status.error { color: var(--danger); }
+    .note { color: var(--muted); font-size: 12px; line-height: 1.6; }
     code {
       background: #eef2ff;
       padding: 2px 6px;
       border-radius: 6px;
     }
-    @media (max-width: 860px) {
-      .hero { grid-template-columns: 1fr; }
-      .chat-form { grid-template-columns: 1fr; }
+    @media (max-width: 980px) {
+      .hero-grid, .layout, .chat-form { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="shell">
-    <div class="hero">
-      <section class="panel">
-        <h1>Manufacturing RAG Demo</h1>
-        <p>Ask simple questions over a small document set. The app retrieves matching passages from local documents and uses your local Llama model in Ollama to generate a grounded answer.</p>
-        <div class="examples">
-          <button type="button" data-q="Find the report related to lantern clip issues">Lantern clip issues</button>
-          <button type="button" data-q="Summarize the validation findings for split leather">Split leather findings</button>
-          <button type="button" data-q="Where is the latest know-how document from Martin">Latest document from Martin</button>
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow">Manager Demo</span>
+          <h1>Manufacturing Knowledge Assistant</h1>
+          <p>Search issue reports, summarize validation findings, and locate the latest know-how documents using your local Llama model plus grounded retrieval over internal documents.</p>
+          <div class="stats">
+            <div class="stat">
+              <strong id="docCountHero">0</strong>
+              <span>indexed documents</span>
+            </div>
+            <div class="stat">
+              <strong>TF-IDF + Llama</strong>
+              <span>retrieval and local generation</span>
+            </div>
+            <div class="stat">
+              <strong>Local Ollama</strong>
+              <span id="modelNameHero">llama3:latest</span>
+            </div>
+          </div>
         </div>
-      </section>
-      <aside class="panel">
-        <div class="toolbar">
-          <button id="reindexBtn" type="button">Rebuild Index</button>
-          <small>Reads files from <code>data/docs</code></small>
+        <div class="hero-side">
+          <h2>What to show</h2>
+          <ul>
+            <li>Ask a typo-heavy issue search question</li>
+            <li>Summarize validation findings from uploaded docs</li>
+            <li>Locate the newest document from a named author</li>
+            <li>Show cited evidence instead of free-form answers</li>
+          </ul>
+          <div class="badge-row">
+            <span class="badge">RAG Demo</span>
+            <span class="badge">Drag & Drop Upload</span>
+            <span class="badge">Clear Chat</span>
+          </div>
         </div>
-        <p><strong>Demo flow</strong><br />1. Drop a few PDFs or DOCX files into the docs folder.<br />2. Rebuild the index.<br />3. Ask a question.<br />4. Show the manager the answer plus citations.</p>
-      </aside>
-    </div>
-
-    <section class="panel">
-      <div id="chatBox" class="chat-box"></div>
-      <form id="chatForm" class="chat-form">
-        <textarea id="question" placeholder="Ask a question about your manufacturing documents"></textarea>
-        <button type="submit">Ask</button>
-      </form>
-      <div id="status" class="status">Ready.</div>
+      </div>
     </section>
+
+    <div class="layout">
+      <aside class="panel">
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Document Control</h2>
+          <div id="uploadZone" class="upload-zone">
+            <p><strong>Drag and drop files here</strong></p>
+            <p>Supported: PDF, DOCX, TXT, MD</p>
+            <label id="uploadLabel" class="upload-label" for="fileInput">Choose files</label>
+            <input id="fileInput" type="file" multiple accept=".pdf,.docx,.txt,.md" />
+          </div>
+          <div class="button-row" style="margin-top: 12px;">
+            <button id="reindexBtn" class="accent" type="button">Rebuild Index</button>
+            <button id="refreshDocsBtn" class="ghost" type="button">Refresh Docs</button>
+          </div>
+          <p class="note" style="margin-top: 10px;">Uploaded files are saved into <code>data/docs</code> and the index is rebuilt automatically.</p>
+        </div>
+
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Example Questions</h2>
+          <div class="examples">
+            <button type="button" data-q="Find the report related to lanten Clip issues">Lantern clip</button>
+            <button type="button" data-q="summaries the validation findinginn for s[lit leather">Split leather</button>
+            <button type="button" data-q="where is the latest document know how document from martin">Latest from Martin</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <h2 class="sidebar-title">Indexed Documents</h2>
+          <div id="docList" class="doc-list"></div>
+        </div>
+      </aside>
+
+      <section class="panel">
+        <div class="chat-header">
+          <div>
+            <h2 class="main-title">Chat Workspace</h2>
+            <div class="note">Ask a question, inspect citations, then clear the workspace before the next demo scenario.</div>
+          </div>
+          <div class="button-row">
+            <button id="clearChatBtn" class="secondary" type="button">Clear Chat</button>
+          </div>
+        </div>
+
+        <div id="chatBox" class="chat-box"></div>
+        <form id="chatForm" class="chat-form">
+          <textarea id="question" placeholder="Ask a question about manufacturing issues, validation findings, or internal know-how documents"></textarea>
+          <button id="askBtn" class="primary" type="submit">Ask</button>
+        </form>
+        <div id="status" class="status">Ready.</div>
+      </section>
+    </div>
   </div>
 
   <script>
     const chatBox = document.getElementById('chatBox');
     const questionInput = document.getElementById('question');
     const chatForm = document.getElementById('chatForm');
+    const askBtn = document.getElementById('askBtn');
     const reindexBtn = document.getElementById('reindexBtn');
+    const refreshDocsBtn = document.getElementById('refreshDocsBtn');
+    const clearChatBtn = document.getElementById('clearChatBtn');
     const statusEl = document.getElementById('status');
+    const docList = document.getElementById('docList');
+    const docCountHero = document.getElementById('docCountHero');
+    const fileInput = document.getElementById('fileInput');
+    const uploadZone = document.getElementById('uploadZone');
+    const uploadLabel = document.getElementById('uploadLabel');
     const exampleButtons = Array.from(document.querySelectorAll('[data-q]'));
-    const submitButton = chatForm.querySelector('button[type="submit"]');
+    const defaultSystemMessage = 'The demo is live. Upload a few files, ask a question, and use Clear Chat before the next scenario.';
 
     function setStatus(message, kind = '') {
       statusEl.textContent = message;
@@ -191,12 +415,26 @@
 
     function setBusy(isBusy) {
       questionInput.disabled = isBusy;
-      submitButton.disabled = isBusy;
+      askBtn.disabled = isBusy;
       reindexBtn.disabled = isBusy;
+      refreshDocsBtn.disabled = isBusy;
+      clearChatBtn.disabled = isBusy;
+      fileInput.disabled = isBusy;
+      uploadLabel.classList.toggle('disabled', isBusy);
       exampleButtons.forEach((button) => {
         button.disabled = isBusy;
       });
-      submitButton.textContent = isBusy ? 'Thinking...' : 'Ask';
+      askBtn.textContent = isBusy ? 'Thinking...' : 'Ask';
+    }
+
+    function formatBytes(size) {
+      if (size < 1024) return `${size} B`;
+      if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+      return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    function formatDate(epochSeconds) {
+      return new Date(epochSeconds * 1000).toLocaleString();
     }
 
     function addMessage(kind, title, body, citations = []) {
@@ -205,8 +443,8 @@
       const header = document.createElement('h4');
       header.textContent = title;
       const content = document.createElement('div');
+      content.className = 'msg-body';
       content.textContent = body;
-      content.style.whiteSpace = 'pre-wrap';
       container.appendChild(header);
       container.appendChild(content);
 
@@ -219,7 +457,7 @@
         citations.forEach((citation) => {
           const item = document.createElement('div');
           item.className = 'citation';
-          item.innerHTML = `<strong>${citation.title}</strong><div>${citation.source}</div><div>Score: ${citation.score}</div><div>${citation.text.slice(0, 280)}...</div>`;
+          item.innerHTML = `<strong>${citation.title}</strong><div>${citation.source}</div><div>Score: ${citation.score}</div><div>${citation.text.slice(0, 260)}...</div>`;
           section.appendChild(item);
         });
         container.appendChild(section);
@@ -227,6 +465,31 @@
 
       chatBox.appendChild(container);
       chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function resetChat() {
+      chatBox.innerHTML = '';
+      addMessage('system', 'Ready', defaultSystemMessage);
+      setStatus('Ready.', 'ok');
+    }
+
+    async function loadDocuments() {
+      const response = await fetch('/api/documents');
+      const payload = await response.json();
+      docCountHero.textContent = payload.count;
+      if (!payload.documents.length) {
+        docList.innerHTML = '<div class="doc-item"><strong>No documents yet</strong><div class="doc-meta">Upload a few sample files to start the demo.</div></div>';
+        return;
+      }
+
+      docList.innerHTML = payload.documents
+        .map((doc) => `
+          <div class="doc-item">
+            <strong>${doc.name}</strong>
+            <div class="doc-meta">${formatBytes(doc.size_bytes)} · updated ${formatDate(doc.updated_at)}</div>
+          </div>
+        `)
+        .join('');
     }
 
     async function askQuestion(question) {
@@ -251,8 +514,14 @@
           setStatus(message, 'error');
           return;
         }
+
         const payload = await response.json();
-        addMessage('assistant', payload.mode === 'rag' ? 'Assistant' : 'Assistant (retrieval mode)', payload.answer, payload.citations || []);
+        addMessage(
+          'assistant',
+          payload.mode === 'rag' ? 'Assistant' : 'Assistant (retrieval mode)',
+          payload.answer,
+          payload.citations || []
+        );
         setStatus(
           payload.mode === 'rag'
             ? 'Answered using local Llama and retrieved sources.'
@@ -268,6 +537,37 @@
       }
     }
 
+    async function uploadFiles(files) {
+      if (!files.length) {
+        return;
+      }
+
+      const data = new FormData();
+      Array.from(files).forEach((file) => data.append('files', file));
+      setBusy(true);
+      setStatus(`Uploading ${files.length} file(s) and rebuilding the index...`, 'busy');
+      try {
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: data,
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.detail || 'Upload failed.');
+        }
+        await loadDocuments();
+        setStatus(`Uploaded ${payload.uploaded.length} file(s). Indexed ${payload.chunks} chunks across ${payload.document_count} documents.`, 'ok');
+        addMessage('system', 'Upload complete', `Uploaded: ${payload.uploaded.join(', ')}`);
+      } catch (error) {
+        const message = error.message || 'Upload failed.';
+        addMessage('system', 'Error', message);
+        setStatus(message, 'error');
+      } finally {
+        fileInput.value = '';
+        setBusy(false);
+      }
+    }
+
     chatForm.addEventListener('submit', async (event) => {
       event.preventDefault();
       const question = questionInput.value.trim();
@@ -276,7 +576,11 @@
       await askQuestion(question);
     });
 
-    document.querySelectorAll('[data-q]').forEach((button) => {
+    clearChatBtn.addEventListener('click', () => {
+      resetChat();
+    });
+
+    exampleButtons.forEach((button) => {
       button.addEventListener('click', async () => {
         await askQuestion(button.getAttribute('data-q'));
       });
@@ -288,6 +592,7 @@
       try {
         const response = await fetch('/api/reindex', { method: 'POST' });
         const payload = await response.json();
+        await loadDocuments();
         setStatus(`Indexed ${payload.chunks} chunks.`, 'ok');
       } catch (error) {
         setStatus('Reindex failed. Check the local server logs.', 'error');
@@ -296,7 +601,47 @@
       }
     });
 
-    addMessage('system', 'Ready', 'The demo is live. Pick an example question or ask your own manufacturing search query.');
+    refreshDocsBtn.addEventListener('click', async () => {
+      setStatus('Refreshing document list...', 'busy');
+      try {
+        await loadDocuments();
+        setStatus('Document list refreshed.', 'ok');
+      } catch (error) {
+        setStatus('Could not refresh the document list.', 'error');
+      }
+    });
+
+    fileInput.addEventListener('change', async (event) => {
+      await uploadFiles(event.target.files);
+    });
+
+    ['dragenter', 'dragover'].forEach((eventName) => {
+      uploadZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        uploadZone.classList.add('dragover');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach((eventName) => {
+      uploadZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        uploadZone.classList.remove('dragover');
+      });
+    });
+
+    uploadZone.addEventListener('drop', async (event) => {
+      const files = event.dataTransfer.files;
+      await uploadFiles(files);
+    });
+
+    window.addEventListener('load', async () => {
+      resetChat();
+      try {
+        await loadDocuments();
+      } catch (error) {
+        setStatus('The page loaded, but the document list could not be fetched.', 'error');
+      }
+    });
   </script>
 </body>
 </html>
