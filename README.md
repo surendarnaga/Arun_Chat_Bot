@@ -23,15 +23,15 @@ Small local demo for a manufacturing knowledge assistant using:
 
 1. Create a Python virtual environment.
 2. Install dependencies:
-   `pip install -r requirements.txt`
+   `python -m pip install -r requirements.txt`
 3. Install and start Ollama.
 4. Pull a local model:
-   `ollama pull llama3.1:8b`
+   `ollama pull llama3:latest`
 5. Put your documents into `data/docs/`.
 6. Build the local index:
    `python scripts/build_index.py`
 7. Start the app:
-   `uvicorn app.main:app --reload`
+   `python run_demo.py`
 8. Open:
    `http://127.0.0.1:8000`
 
@@ -50,20 +50,56 @@ Small local demo for a manufacturing knowledge assistant using:
 
 If you want to deploy this to a Windows machine as a small software package, use the included launcher and build scripts.
 
+### Windows prerequisites
+
+Install these first on the Windows machine:
+
+1. Python 3.11 or newer from python.org
+2. Ollama for Windows
+3. The local model used by the demo:
+   `ollama pull llama3:latest`
+
+When installing Python on Windows, make sure:
+
+- `Add python.exe to PATH` is selected during install, or
+- the `py` launcher is available in PowerShell / Command Prompt
+
 ### Run directly on Windows
 
-1. Install Python and Ollama.
-2. Pull the model:
-   `ollama pull llama3.1:8b`
-3. Double-click `run_windows.bat`
+1. Open PowerShell in the project folder.
+2. Run:
+   `run_windows.bat`
 
-This creates a virtual environment if needed, installs dependencies, starts the app and opens the browser.
+This script will:
+
+- create `.venv` if it does not exist
+- install or update required Python packages
+- build the local index from `data\docs`
+- start the web app
+- open the browser automatically
+
+You can also run the steps manually in PowerShell:
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python scripts\build_index.py
+python run_demo.py
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000
+```
 
 ### Build a Windows executable package
 
 1. Install Python on the Windows build machine.
 2. Install Ollama and pull the model:
-   `ollama pull llama3.1:8b`
+   `ollama pull llama3:latest`
 3. Double-click `build_windows.bat`
 4. After the build completes, take the folder:
    `dist\ManufacturingRAGDemo`
@@ -78,3 +114,26 @@ This creates a virtual environment if needed, installs dependencies, starts the 
 - The local search index is written to `data\index` next to the executable.
 - Sample demo documents are copied into `data\docs` on first run if that folder is empty.
 - Ollama must be installed and running on the Windows machine because the demo calls `http://127.0.0.1:11434`.
+
+### Windows troubleshooting
+
+If the demo does not start correctly on Windows, check these first:
+
+1. `py` is available:
+   `py --version`
+2. Ollama is installed and running:
+   `ollama list`
+3. The model exists locally:
+   `ollama pull llama3:latest`
+4. The index can be rebuilt manually:
+   `python scripts\build_index.py`
+5. The app starts manually:
+   `python run_demo.py`
+
+Common fixes:
+
+- If PowerShell blocks virtual environment activation, run:
+  `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+- If port 8000 is already used, stop the other local app using that port first.
+- If Ollama is not running, the UI still opens but responses fall back to retrieval-only mode.
+- If you add new documents and do not see them reflected, use the `Rebuild Index` button in the UI.
